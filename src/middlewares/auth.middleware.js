@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { failureResponse } = require("../utils/response");
 const { verifyToken } = require("../utils/jwt");
+const { getTokenInRedis } = require("../utils/redis");
 
 exports.authToken = async (req, res, next) => {
   let token;
@@ -17,8 +18,11 @@ exports.authToken = async (req, res, next) => {
   }
   try {
     const decoded = verifyToken(token);
-
-    // Check that the token exists in DB and is not revoked/expired, for extra security. We can also implement redis here for log out or token revoked.
+    // Redis
+    const redisToken = await getTokenInRedis(decoded.jti);
+    if (!redisToken) {
+      return res.status(401).json({ message: "Token expired or revoked" });
+    }
     req.user = decoded;
     next();
   } catch (err) {

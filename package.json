@@ -27,6 +27,7 @@
     "joi": "^17.7.0",
     "jsonwebtoken": "^9.0.1",
     "mysql2": "^2.3.3",
+    "redis": "^5.11.0",
     "sequelize": "^6.25.5"
   },
   "devDependencies": {

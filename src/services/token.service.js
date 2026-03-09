@@ -5,7 +5,7 @@ exports.storeToken = async (user_id, refreshToken) => {
   await db.User_Token.create({
     user_id,
     refresh_token: refreshToken,
-    refresh_expires_at: new Date().getTime() + 7 * 60 * 1000,
+    refresh_expires_at: new Date().getTime() + 7 * 24 * 60 * 60 * 1000,
   });
   return null;
 };

@@ -3,9 +3,11 @@ const jwt = require("jsonwebtoken");
 const ACCESS_SECRET = process.env.JWT_SECRET || "supersecretkey";
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || ACCESS_SECRET;
 
-const signAccessToken = (userId, role) => {
+const signAccessToken = (userId, role, jti) => {
   const expiresIn = "7m";
-  const token = jwt.sign({ id: userId, role }, ACCESS_SECRET, { expiresIn });
+  const token = jwt.sign({ id: userId, role, jti }, ACCESS_SECRET, {
+    expiresIn,
+  });
   return token;
 };
 

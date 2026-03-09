@@ -2,13 +2,19 @@ const {
   validateLogin,
   validateRegistration,
 } = require("../middlewares/Validation/auth.validation");
+const { v4: uuidv4 } = require("uuid");
 const db = require("../models");
 const { storeToken, findValidToken } = require("../services/token.service");
-const { signAccessToken, signRefreshToken } = require("../utils/jwt");
+const {
+  signAccessToken,
+  signRefreshToken,
+  verifyToken,
+} = require("../utils/jwt");
 const { hashPassword, comparePassword } = require("../utils/password");
+const { setTokenInRedis, deleteTokenInRedis } = require("../utils/redis");
 const { failureResponse, successResponse } = require("../utils/response");
 
-const setTokenCookies = (res, accessToken, refreshToken, role = "user") => {
+const setTokenCookies = (res, accessToken, refreshToken) => {
   const accessMaxAge = 7 * 60 * 1000;
   const refreshMaxAge = 7 * 24 * 60 * 60 * 1000;
 
@@ -80,11 +86,14 @@ exports.login = async (req, res) => {
       return failureResponse(res, "Invalid credentials", 401);
     }
     // Generate tokens
-    const accessToken = signAccessToken(user.id, user.role);
+    const jti = uuidv4();
+    const accessToken = signAccessToken(user.id, user.role, jti);
     const refreshToken = signRefreshToken(user.id);
     await storeToken(user.id, refreshToken);
+    // Redis
+    await setTokenInRedis(jti, user.id);
     delete user.password;
-    setTokenCookies(res, accessToken, refreshToken, user.role);
+    setTokenCookies(res, accessToken, user.role);
     return successResponse(
       res,
       { user, accessToken, refreshToken },
@@ -98,17 +107,33 @@ exports.login = async (req, res) => {
 
 exports.logout = async (req, res) => {
   try {
-    let token;
+    // Delete refresh token
+    let refreshToken;
     if (req.cookies && req.cookies.refreshToken) {
-      token = req.cookies.refreshToken;
+      refreshToken = req.cookies.refreshToken;
     }
-    const tokenRow = await findValidToken(token);
-    if (tokenRow) {
-      await db.User_Token.destroy({
-        where: { id: tokenRow.id },
-      });
+    if (refreshToken) {
+      const refreshTokenRow = await findValidToken(refreshToken);
+      if (refreshTokenRow) {
+        await db.User_Token.destroy({
+          where: { id: refreshTokenRow.id },
+        });
+      }
     }
-
+    // Delete redis token
+    let accessToken;
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      accessToken = req.headers.authorization.split(" ")[1];
+    } else if (req.cookies && req.cookies.accessToken) {
+      accessToken = req.cookies.accessToken;
+    }
+    if (accessToken) {
+      const decoded = verifyToken(accessToken);
+      await deleteTokenInRedis(decoded.jti);
+    }
     clearTokenCookies(res);
     return successResponse(res, null, "Logged out successfully");
   } catch (error) {
@@ -131,6 +156,9 @@ exports.users = async (req, res) => {
     // Count All User
     const [users, totalUser] = await Promise.all([
       db.User.findAll({
+        attributes: {
+          exclude: ["password"],
+        },
         limit: recordLimit,
         offset: offSet,
         order: [["createdAt", "DESC"]],
