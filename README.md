@@ -2,15 +2,33 @@
 
 Build a secure backend API for a medium-complexity task and workflow management system.
 
-# Set UP
+# Tech Stack
 
-Node.js (v14.x or higher recommended)
-MySQL Server
-Npm
+Node.js (v14.x or higher)
+Express.js
+MySQL
+Sequelize ORM
+Redis (for token/session management)
+JWT Authentication
+Joi Validation
 
-# Env 
+# Project Setup
 
-Create .env.development and .env.production and set variable according to .env.example
+1. Clone Repository
+   git clone https://github.com/ankushguptamay/helicore-task-management.git
+   cd <project_folder>
+
+2. Install Dependencies
+   npm install
+
+# Environment Configuration
+
+1. Create environment files:
+   .env.development
+   .env.production
+
+2. Copy variables from:
+   .env.example
 
 # Database Setup
 
@@ -39,9 +57,10 @@ npm run dev (development)
 
 npm start (production)
 
-# API 
+# API
+
 http://localhost:{port}/api/v1/auth/register
-Post method 
+Post method
 This API is for admin to create/add user.
 
 http://localhost:{port}/api/v1/auth/login

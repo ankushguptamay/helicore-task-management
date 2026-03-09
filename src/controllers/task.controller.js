@@ -36,7 +36,6 @@ exports.tasks = async (req, res) => {
 exports.taskDetails = async (req, res) => {
   try {
     const id = req.params.id;
-    console.log(id);
     const where = { id };
     if (req.user.role === "user") {
       where.assignedTo = req.user.id;
