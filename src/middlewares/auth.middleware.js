@@ -25,6 +25,7 @@ exports.authToken = async (req, res, next) => {
       // Check is refresh token present ?
       // Git change
       return res.status(401).json({ message: "Token expired or revoked" });
+      "Hello, this is testing"
     }
     req.user = decoded;
     next();
