@@ -22,6 +22,7 @@ exports.authToken = async (req, res, next) => {
     const redisToken = await getTokenInRedis(decoded.jti);
     if (!redisToken) {
       // Need to check refresh token validity?
+      // Git change
       return res.status(401).json({ message: "Token expired or revoked" });
     }
     req.user = decoded;
